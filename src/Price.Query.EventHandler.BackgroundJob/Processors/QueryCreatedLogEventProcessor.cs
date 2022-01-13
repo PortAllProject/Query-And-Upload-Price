@@ -5,6 +5,7 @@ using AElf.AElfNode.EventHandler.BackgroundJob;
 using AElf.AElfNode.EventHandler.BackgroundJob.EventProcessor;
 using AElf.Contracts.Oracle;
 using AElf.Types;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Price.Query.AElfWeb.Managers;
@@ -51,13 +52,14 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
             _logger.LogInformation(queryCreated.ToString());
             var title = queryCreated.QueryInfo.Title;
             var data = string.Empty;
+            var timestamp = Timestamp.FromDateTime(txInfoDto.BlockTime);
             if (title.StartsWith("TokenSwapPrice"))
             {
-                data = await GetTokenSwapPriceAsync(queryCreated);
+                data = await GetTokenSwapPriceAsync(queryCreated, timestamp);
             }
             else if (title.StartsWith("ExchangeTokenPrice"))
             {
-                data = await GetExchangeTokenPriceAsync(queryCreated);
+                data = await GetExchangeTokenPriceAsync(queryCreated, timestamp);
             }
 
             if (string.IsNullOrEmpty(data))
@@ -69,25 +71,25 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
             CommitData(queryCreated, data, _priceQueryOptions.OracleContractAddress);
         }
 
-        private async Task<string> GetExchangeTokenPriceAsync(QueryCreated queryCreated)
+        private async Task<string> GetExchangeTokenPriceAsync(QueryCreated queryCreated, Timestamp timestamp)
         {
             if (!IsAccountValidNode(queryCreated, _exchangeQueryOptions))
             {
                 return string.Empty;
             }
 
-            var data = await QueryDataAsync(queryCreated);
+            var data = await QueryDataAsync(queryCreated, timestamp);
             return data;
         }
 
-        private async Task<string> GetTokenSwapPriceAsync(QueryCreated queryCreated)
+        private async Task<string> GetTokenSwapPriceAsync(QueryCreated queryCreated, Timestamp timestamp)
         {
             if (!IsAccountValidNode(queryCreated, _tokenSwapQueryOptions))
             {
                 return string.Empty;
             }
 
-            var data = await QueryDataAsync(queryCreated);
+            var data = await QueryDataAsync(queryCreated, timestamp);
             return data;
         }
 
@@ -110,9 +112,9 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
             _logger.LogInformation($"[Commit] Tx id {txId}");
         }
 
-        private async Task<string> QueryDataAsync(QueryCreated queryCreated)
+        private async Task<string> QueryDataAsync(QueryCreated queryCreated, Timestamp timestamp)
         {
-            var data = await _dataProvider.GetDataAsync(queryCreated.QueryId, queryCreated.QueryInfo.Title,
+            var data = await _dataProvider.GetDataAsync(queryCreated.QueryId, timestamp, queryCreated.QueryInfo.Title,
                 queryCreated.QueryInfo.Options.ToList());
             if (!string.IsNullOrEmpty(data)) return data;
 

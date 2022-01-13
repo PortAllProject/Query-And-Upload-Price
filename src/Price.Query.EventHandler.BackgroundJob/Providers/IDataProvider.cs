@@ -5,8 +5,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using AElf;
+using AElf.Contracts.Price;
 using AElf.Types;
 using Awaken.Contracts.Swap;
+using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Price.Query.AElfWeb.Extensions;
@@ -18,7 +22,7 @@ namespace Price.Query.EventHandler.BackgroundJob.Providers
 {
     public interface IDataProvider
     {
-        Task<string> GetDataAsync(Hash queryId, string title = null, List<string> options = null);
+        Task<string> GetDataAsync(Hash queryId, Timestamp timestamp = null, string title = null, List<string> options = null);
     }
     
     public class DataProvider : IDataProvider, ISingletonDependency
@@ -42,7 +46,7 @@ namespace Price.Query.EventHandler.BackgroundJob.Providers
             _dictionary = new Dictionary<Hash, string>();
         }
 
-        public async Task<string> GetDataAsync(Hash queryId, string title = null, List<string> options = null)
+        public async Task<string> GetDataAsync(Hash queryId, Timestamp timestamp, string title = null, List<string> options = null)
         {
             if (title == "invalid")
             {
@@ -54,7 +58,7 @@ namespace Price.Query.EventHandler.BackgroundJob.Providers
                 return data;
             }
 
-            if (title == null || options == null)
+            if (title == null || options == null || timestamp == null)
             {
                 _logger.LogError($"No data of {queryId} for revealing.");
                 return string.Empty;
@@ -63,18 +67,32 @@ namespace Price.Query.EventHandler.BackgroundJob.Providers
             var tokenPair = GetTokenPairs(options).First();
             string price;
             _logger.LogInformation($"Trying to query token price {tokenPair.TokenSymbol}-{tokenPair.UnderlyingTokenSymbol}");
-            if (title == "ExchangeTokenPrice")
+            if (title.StartsWith("ExchangeTokenPrice"))
             {
                 price = await GetPriceFromExchangeAsync(tokenPair.TokenSymbol, tokenPair.UnderlyingTokenSymbol);
-                _logger.LogInformation($"price: {price}");
-                _dictionary[queryId] = price;
-                return price;
             }
-
-            price = await GetPriceFromTokenSwapAsync(tokenPair.TokenSymbol, tokenPair.UnderlyingTokenSymbol);
-            _logger.LogInformation($"price: {price}");
-            _dictionary[queryId] = price;
-            return price;
+            else if (title.StartsWith("TokenSwapPrice"))
+            {
+                price = await GetPriceFromTokenSwapAsync(tokenPair.TokenSymbol, tokenPair.UnderlyingTokenSymbol);
+            }
+            else
+            {
+                _logger.LogInformation($"Invalid title {title}");
+                return string.Empty;
+            }
+            
+            var tokenPrice = new TokenPrice
+            {
+                TokenSymbol = tokenPair.TokenSymbol,
+                TargetTokenSymbol = tokenPair.UnderlyingTokenSymbol,
+                Price = price,
+                Timestamp = timestamp
+            };
+            var dataPriceByteString = tokenPrice.ToByteString().ToHex();
+            _logger.LogInformation(
+                $"Token: {tokenPair.TokenSymbol} Target token: {tokenPair.UnderlyingTokenSymbol} Price: {price} Datetime: {timestamp}");
+            _dictionary[queryId] = dataPriceByteString;
+            return dataPriceByteString;
         }
 
         private async Task<string> GetDataFromTitleUrl(string title, List<string> options)
