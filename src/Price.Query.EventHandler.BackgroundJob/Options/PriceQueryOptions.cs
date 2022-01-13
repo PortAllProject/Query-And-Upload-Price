@@ -11,6 +11,7 @@ namespace Price.Query.EventHandler.BackgroundJob.Options
         public string AccountPassword { get; set; }
         public string PriceContractAddress { get; set; }
         public string OracleContractAddress { get; set; }
+        public string QuerySender { get; set; }
         public List<TokenPair> ExchangeTokenPairs { get; set; } = new();
     }
 

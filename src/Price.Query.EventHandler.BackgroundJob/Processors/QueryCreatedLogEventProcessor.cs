@@ -128,23 +128,7 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
                 return false;
             }
 
-            if (queryCreated.AggregateThreshold != options.AggregateThreshold)
-            {
-                return false;
-            }
-
-            if (queryCreated.AggregatorContractAddress != Address.FromBase58(options.AggregatorContractAddress))
-            {
-                return false;
-            }
-
-            if (queryCreated.DesignatedNodeList.Value.Count != options.DesignatedNodes.Count)
-            {
-                return false;
-            }
-
-            return options.DesignatedNodes.Select(Address.FromBase58)
-                .Any(x => queryCreated.DesignatedNodeList.Value.Contains(x));
+            return _priceQueryOptions.QuerySender == queryCreated.QuerySender.ToBase58();
         }
     }
 }
