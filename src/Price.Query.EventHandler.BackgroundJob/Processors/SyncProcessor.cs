@@ -8,7 +8,7 @@ using Price.Query.EventHandler.BackgroundJob.Services;
 
 namespace Price.Query.EventHandler.BackgroundJob.Processors
 {
-    public class SyncProcessor : AElfEventProcessorBase<Sync>
+    internal class SyncProcessor : AElfEventProcessorBase<Sync>
     {
         private readonly ILogger<SyncProcessor> _logger;
         private readonly IQueryPriceService _queryPriceService;
@@ -21,6 +21,11 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
 
         protected override async Task HandleEventAsync(Sync eventDetailsEto, EventContext txContext)
         {
+            if (txContext.Status != PriceQueryConstants.MinedStatus)
+            {
+                return;
+            }
+            
             _logger.LogInformation($"Sync Trigger: {eventDetailsEto}");
             await _queryPriceService.QuerySwapTokenPrice(new[]
             {

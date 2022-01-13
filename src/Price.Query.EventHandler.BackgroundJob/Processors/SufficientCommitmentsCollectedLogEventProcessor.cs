@@ -32,6 +32,11 @@ namespace Price.Query.EventHandler.BackgroundJob.Processors
 
         protected override async Task HandleEventAsync(SufficientCommitmentsCollected collected, EventContext txInfoDto)
         {
+            if (txInfoDto.Status != PriceQueryConstants.MinedStatus)
+            {
+                return;
+            }
+            
             if (!_priceQueryOptions.IsCommitData)
             {
                 return;
