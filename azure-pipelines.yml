@@ -11,7 +11,7 @@ jobs:
       - task: UseDotNet@2
         displayName: 'Install .NET Core SDK'
         inputs:
-          version: 6.0.x
+          version: 5.0.x
       - script: PowerShell.exe -file build.ps1 --target=Build
         displayName: 'Build and Test'
       - task: PublishTestResults@2
@@ -38,7 +38,7 @@ jobs:
       - task: UseDotNet@2
         displayName: 'Install .NET Core SDK'
         inputs:
-          version: 6.0.x
+          version: 5.0.x
       - script: bash build.sh --target=Build
         displayName: 'Build and Test'
       - task: PublishTestResults@2
@@ -67,7 +67,7 @@ jobs:
       - task: UseDotNet@2
         displayName: 'Install .NET Core SDK'
         inputs:
-          version: 6.0.x
+          version: 5.0.x
 #      - script: cd scripts && bash elasticsearch-macOS.sh
 #        displayName: 'Start an elasticsearch'
       - script: bash build.sh --target=Build
