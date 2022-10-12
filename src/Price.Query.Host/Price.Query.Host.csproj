@@ -4,7 +4,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
         <RootNamespace>Price.Host</RootNamespace>
     </PropertyGroup>
 
@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.AElfNode.EventHandler" Version="0.8.0" />
+        <PackageReference Include="AElf.AElfNode.EventHandler" Version="0.8.2" />
     </ItemGroup>
 
     <ItemGroup>
